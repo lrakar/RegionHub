@@ -41,10 +41,10 @@ function GetRegionFromCursor()
     for i = 0, num_markers + num_regions - 1 do
         local retval, isrgn, pos, rgnend, name, index, color = reaper.EnumProjectMarkers3(0, i)
         if isrgn and cursor_pos >= pos and cursor_pos < rgnend then
-            if color == nil or color == 0 then color = 0x808080 end 
-            local r = (color & 0xFF)
-            local g = (color >> 8) & 0xFF
-            local b = (color >> 16) & 0xFF
+            if color == nil or color == 0 then color = 0x808080 end
+
+            -- Using reaper.ColorFromNative to get the correct RGB values
+            local r, g, b = reaper.ColorFromNative(color)
             return name, pos, rgnend, r, g, b, index
         end
     end
