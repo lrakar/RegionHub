@@ -156,30 +156,36 @@ end
 function HandleTextInput(char)
     if isEditingRegion then
         if char == 13 then -- Enter key
-            -- Ensures the updated region name is sent to Reaper
+            -- Update region name
             UpdateRegionNameInReaper(editedRegionIndex, editedRegionName)
             isEditingRegion = false
             editedRegionIndex = -1
             editedRegionName = ""
             cursorPosition = 0
         elseif char == 8 then -- Backspace key
+            -- Remove character
             if cursorPosition > 0 then
                 editedRegionName = editedRegionName:sub(1, cursorPosition - 1) .. editedRegionName:sub(cursorPosition + 1)
                 cursorPosition = math.max(0, cursorPosition - 1)
             end
-        elseif char == -1 then -- Left arrow key
-            cursorPosition = math.max(0, cursorPosition - 1)
-        elseif char == -2 then -- Right arrow key
-            cursorPosition = math.min(#editedRegionName, cursorPosition + 1)
         elseif char >= 32 and char <= 126 then
-            -- Add character to the string (only printable ASCII characters)
-            editedRegionName = editedRegionName:sub(1, cursorPosition) .. string.char(char) .. editedRegionName:sub(cursorPosition + 1)
+            -- Add character to the string (printable ASCII characters)
+            local inputChar = string.char(char)
+
+            -- Check if Shift is held down (gfx.mouse_cap & 1)
+            -- Also, consider the character's case to infer Caps Lock state
+            if (gfx.mouse_cap & 1 == 0 and char >= 65 and char <= 90) or
+               (gfx.mouse_cap & 1 == 1 and char >= 97 and char <= 122) then
+                inputChar = string.upper(inputChar)
+            else
+                inputChar = string.lower(inputChar)
+            end
+
+            editedRegionName = editedRegionName:sub(1, cursorPosition) .. inputChar .. editedRegionName:sub(cursorPosition + 1)
             cursorPosition = cursorPosition + 1
         end
     end
 end
-
-
 
 
 
