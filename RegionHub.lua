@@ -166,19 +166,23 @@ function HandleTextInput(char)
             -- Remove character
             if cursorPosition > 0 then
                 editedRegionName = editedRegionName:sub(1, cursorPosition - 1) .. editedRegionName:sub(cursorPosition + 1)
-                cursorPosition = math.max(0, cursorPosition - 1)
+                cursorPosition = cursorPosition - 1
             end
         elseif char >= 32 and char <= 126 then
             -- Add character to the string (printable ASCII characters)
             local inputChar = string.char(char)
 
             -- Check if Shift is held down (gfx.mouse_cap & 1)
-            -- Also, consider the character's case to infer Caps Lock state
-            if (gfx.mouse_cap & 1 == 0 and char >= 65 and char <= 90) or
-               (gfx.mouse_cap & 1 == 1 and char >= 97 and char <= 122) then
-                inputChar = string.upper(inputChar)
+            local shiftHeld = gfx.mouse_cap & 1 == 1
+
+            -- Handling character case
+            if shiftHeld then
+                -- If Shift is held, we toggle the case of the character
+                inputChar = inputChar:match("%l") and inputChar:upper() or inputChar:lower()
             else
-                inputChar = string.lower(inputChar)
+                -- Without Shift, we assume regular typing
+                -- We won't change the case, keeping the character as is
+                -- This assumes Caps Lock will affect the character case as the user types
             end
 
             editedRegionName = editedRegionName:sub(1, cursorPosition) .. inputChar .. editedRegionName:sub(cursorPosition + 1)
@@ -186,6 +190,8 @@ function HandleTextInput(char)
         end
     end
 end
+
+
 
 
 
