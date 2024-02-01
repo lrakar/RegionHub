@@ -1,7 +1,8 @@
 -- regionNameDisplay.lua - Part of regionHub
 -- This script displays the name of the current region in REAPER and shows its color.
+-- Right-click to open a context menu for docking options.
 
-local last_region_id, last_color = -1, nil
+local last_region_id = -1
 local gfx_w, gfx_h, bar_width = 300, 50, 20
 local text_margin = 10
 
@@ -27,9 +28,23 @@ local function drawRegionName(name)
     gfx.set(1, 1, 1) -- White color for text
     local text_x = bar_width + text_margin
     local _, text_height = gfx.measurestr(name)
-    local text_y = (gfx_h - text_height) / 2 
+    local text_y = (gfx_h - text_height) / 2
     gfx.x, gfx.y = text_x, text_y
     gfx.drawstr(name)
+end
+
+local function toggleDocking()
+    local dock_state = gfx.dock(-1)
+    gfx.dock(dock_state == 0 and 1 or 0)
+end
+
+local function handleRightClick()
+    local dock_state = gfx.dock(-1)
+    local menu_str = dock_state == 0 and "Dock" or "!Dock"
+    gfx.x, gfx.y = gfx.mouse_x, gfx.mouse_y  -- Set menu position to mouse cursor
+    if gfx.showmenu(menu_str) == 1 then
+        toggleDocking()
+    end
 end
 
 function main()
@@ -44,6 +59,11 @@ function main()
         drawRegionBar(r, g, b)
         drawRegionName(name)
         gfx.update()
+    end
+
+    if gfx.mouse_cap & 2 == 2 then
+        handleRightClick()
+        gfx.mouse_cap = 0 -- Reset mouse capture state
     end
 
     reaper.defer(main)
