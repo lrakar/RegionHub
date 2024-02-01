@@ -1,44 +1,52 @@
 -- regionNameDisplay.lua - Part of regionHub
--- This script displays the name of the current region in REAPER.
+-- This script displays the name of the current region in REAPER and shows its color.
 
--- Initialize the variable to keep track of the last region ID encountered
-local last_region_id = -1
+local last_region_id, last_color = -1, nil
+local gfx_w, gfx_h, bar_width = 300, 50, 20
+local text_margin = 10
 
--- Set up the GUI window for displaying the region name
--- Initializes a graphics window with a title, width, and height
-gfx.init("Current Region Display", 300, 50)
-gfx.clear = reaper.ColorToNative(30,30,30) -- Set the background color of the window
-gfx.setfont(1, "Calibri", 20) -- Set the font type and size for the text
+gfx.init("Current Region Display", gfx_w, gfx_h)
+gfx.setfont(1, "Calibri", 20)
 
--- Main execution loop of the script
+local function getRegionInfo(region_idx)
+    if region_idx >= 0 then
+        local _, _, _, _, _, _, color = reaper.EnumProjectMarkers3(0, region_idx)
+        local name = ({reaper.EnumProjectMarkers3(0, region_idx)})[5]
+        local r, g, b = (color >> 16) & 255, (color >> 8) & 255, color & 255
+        return name, r / 255, g / 255, b / 255
+    end
+    return "Not in Region", 0.2, 0.2, 0.2  -- Default values
+end
+
+local function drawRegionBar(r, g, b)
+    gfx.set(r, g, b)
+    gfx.rect(0, 0, bar_width, gfx_h, 1)
+end
+
+local function drawRegionName(name)
+    gfx.set(1, 1, 1) -- White color for text
+    local text_x = bar_width + text_margin
+    local _, text_height = gfx.measurestr(name)
+    local text_y = (gfx_h - text_height) / 2 
+    gfx.x, gfx.y = text_x, text_y
+    gfx.drawstr(name)
+end
+
 function main()
-    -- Determine the current position:
-    -- If playback is stopped (GetPlayState() == 0), use the edit cursor position (GetCursorPosition)
-    -- Otherwise, use the current play position (GetPlayPosition)
-    local pos = reaper.GetPlayState() == 0 and reaper.GetCursorPosition() or reaper.GetPlayPosition()
-
-    -- Fetch the index of the region at the current position
-    -- GetLastMarkerAndCurRegion returns several values, but only the region index is needed here
+    local playState = reaper.GetPlayState()
+    local pos = (playState == 0) and reaper.GetCursorPosition() or reaper.GetPlayPosition()
     local _, region_idx = reaper.GetLastMarkerAndCurRegion(0, pos)
 
-    -- Determine the name of the region
-    -- If the region index is valid (>= 0), get the name of the region
-    -- Otherwise, set the name to "Not in Region"
-    local name = region_idx >= 0 and ({reaper.EnumProjectMarkers3(0, region_idx)})[5] or "Not in Region"
-
-    -- Update the display only if the region has changed
     if last_region_id ~= region_idx then
-        last_region_id = region_idx -- Update the last region ID
-        gfx.clear = reaper.ColorToNative(30,30,30) -- Clear the window for new text
-        gfx.x, gfx.y = 10, 10 -- Set the position for the text
-        gfx.drawstr(name) -- Draw the region name or "Not in Region"
-        gfx.update() -- Refresh the window to show the updated text
+        last_region_id = region_idx
+        local name, r, g, b = getRegionInfo(region_idx)
+        gfx.clear = reaper.ColorToNative(30,30,30)
+        drawRegionBar(r, g, b)
+        drawRegionName(name)
+        gfx.update()
     end
 
-    -- Defer the main function to run repeatedly
-    -- This creates a loop that allows the script to continually update the display
     reaper.defer(main)
 end
 
--- Start the script by calling the main function
 main()
