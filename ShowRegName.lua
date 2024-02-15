@@ -9,6 +9,9 @@ local text_margin = 10
 gfx.init("Current Region Display", gfx_w, gfx_h)
 gfx.setfont(1, "Calibri", 20)
 
+-- Dock the window by default (1 = docked, 0 = undocked)
+gfx.dock(1)
+
 local function getRegionInfo(region_idx)
     if region_idx >= 0 then
         local _, _, _, _, _, _, color = reaper.EnumProjectMarkers3(0, region_idx)
